@@ -1,0 +1,110 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FLAG WARS</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#080d18;color:white;font-family:Arial}
+header{text-align:center;padding:25px;background:#111a2b;border-bottom:2px solid #f7c948}
+h1{color:#f7c948;font-size:36px;margin:0}
+header p{color:#aaa}
+.container{max-width:700px;margin:auto;padding:18px}
+.panel{background:#111a2b;border:1px solid #263650;border-radius:14px;padding:18px;margin-bottom:18px}
+h2{color:#f7c948}
+select{width:100%;padding:14px;background:#080d18;color:white;border:1px solid #40516d;border-radius:8px;font-size:16px}
+.country{display:flex;align-items:center;gap:12px;padding:14px 5px;border-bottom:1px solid #263650}
+.rank{color:#f7c948;font-weight:bold;width:30px}
+.flag{font-size:27px}
+.name{flex:1;font-weight:bold}
+.points{color:#f7c948;font-weight:bold}
+.first{background:#273044;border-radius:8px}
+.status{font-size:13px;color:#aaa}
+footer{text-align:center;color:#718099;padding:20px}
+</style>
+</head>
+<body>
+
+<header>
+<h1>⚔️ FLAG WARS</h1>
+<p>Dünya ülkelerinin büyük mücadelesi!</p>
+</header>
+
+<div class="container">
+<div class="panel">
+<h2>🌍 Ülke Seçimi</h2>
+<select id="countrySelect">
+<option>Ülkeler yükleniyor...</option>
+</select>
+<p class="status" id="status">Bağlantı kuruluyor...</p>
+</div>
+
+<div class="panel">
+<h2>🏆 Dünya Sıralaması</h2>
+<div id="leaderboard">Yükleniyor...</div>
+</div>
+</div>
+
+<footer>FLAG WARS © 2026</footer>
+
+<script>
+const URL="https://bmxewokygooxvbrbdqjc.supabase.co";
+const KEY="sb_publishable_wWEBLE60kGEOwRKkWZjkPQ_liboCh0c";
+const db=supabase.createClient(URL,KEY);
+
+function getFlag(code){
+return String.fromCodePoint(...code.toUpperCase().split("").map(c=>127397+c.charCodeAt(0)));
+}
+
+async function load(){
+const {data,error}=await db.from("country_scores")
+.select("country_code,country_name,points")
+.order("points",{ascending:false});
+
+if(error){
+document.getElementById("status").textContent="Bağlantı hatası: "+error.message;
+return;
+}
+
+document.getElementById("status").textContent="🟢 Canlı bağlantı aktif";
+
+const select=document.getElementById("countrySelect");
+const old=select.value;
+select.innerHTML='<option value="">Ülkeni seç</option>';
+
+[...data].sort((a,b)=>a.country_name.localeCompare(b.country_name)).forEach(c=>{
+let option=document.createElement("option");
+option.value=c.country_code;
+option.textContent=getFlag(c.country_code)+" "+c.country_name;
+select.appendChild(option);
+});
+select.value=old;
+
+const board=document.getElementById("leaderboard");
+board.innerHTML="";
+
+data.slice(0,10).forEach((c,i)=>{
+const item=document.createElement("div");
+item.className="country"+(i===0?" first":"");
+item.innerHTML=`
+<span class="rank">#${i+1}</span>
+<span class="flag">${getFlag(c.country_code)}</span>
+<span class="name"></span>
+<span class="points">${Number(c.points).toLocaleString("de-DE")} P</span>`;
+item.querySelector(".name").textContent=c.country_name;
+board.appendChild(item);
+});
+}
+
+db.channel("scores")
+.on("postgres_changes",{event:"*",schema:"public",table:"country_scores"},load)
+.subscribe();
+
+load();
+setInterval(load,30000);
+</script>
+</body>
+</html>
