@@ -1,6 +1,6 @@
 import express from "express";
 import { createClient } from "@supabase/supabase-js";
-import { WebcastPushConnection } from "tiktok-live-connector";
+import { WebcastPushConnection } from "tiktok-live-connector/legacy";
 
 const app = express();
 app.disable("x-powered-by");
