@@ -1,110 +1,148 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FLAG WARS</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080d18">
+<meta name="description" content="FLAG WARS — Dünya ülkelerinin canlı puan mücadelesi.">
+<title>FLAG WARS — Dünya Arenası</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
+:root{color-scheme:dark;--bg:#080d18;--panel:#101a2b;--panel2:#142238;--line:#263a56;--gold:#f6c85f;--text:#f4f7fb;--muted:#91a0b7;--green:#45d49a;--red:#ff7272}
 *{box-sizing:border-box}
-body{margin:0;background:#080d18;color:white;font-family:Arial}
-header{text-align:center;padding:25px;background:#111a2b;border-bottom:2px solid #f7c948}
-h1{color:#f7c948;font-size:36px;margin:0}
-header p{color:#aaa}
-.container{max-width:700px;margin:auto;padding:18px}
-.panel{background:#111a2b;border:1px solid #263650;border-radius:14px;padding:18px;margin-bottom:18px}
-h2{color:#f7c948}
-select{width:100%;padding:14px;background:#080d18;color:white;border:1px solid #40516d;border-radius:8px;font-size:16px}
-.country{display:flex;align-items:center;gap:12px;padding:14px 5px;border-bottom:1px solid #263650}
-.rank{color:#f7c948;font-weight:bold;width:30px}
-.flag{font-size:27px}
-.name{flex:1;font-weight:bold}
-.points{color:#f7c948;font-weight:bold}
-.first{background:#273044;border-radius:8px}
-.status{font-size:13px;color:#aaa}
-footer{text-align:center;color:#718099;padding:20px}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% -15%,#1d3150 0,transparent 48%),var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{width:min(1040px,100% - 32px);margin:auto}
+header{padding:38px 0 28px;text-align:center}
+.brand{display:inline-flex;align-items:center;gap:10px;color:var(--gold);font-weight:900;letter-spacing:.16em;font-size:13px}
+.brand-mark{display:grid;place-items:center;width:38px;height:38px;border:1px solid #806a37;border-radius:12px;background:linear-gradient(145deg,#3b321e,#171d2a);font-size:20px}
+h1{margin:14px 0 8px;font-size:clamp(34px,7vw,58px);line-height:1;letter-spacing:-.055em}
+h1 span{color:var(--gold)}
+.subtitle{margin:0;color:var(--muted);font-size:15px}
+.statusbar{display:flex;justify-content:center;align-items:center;gap:9px;margin:22px auto 0;color:var(--muted);font-size:12px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 12px #45d49a88}
+.dot.off{background:var(--red);box-shadow:0 0 12px #ff727288}
+main{padding-bottom:42px}
+.section-head{display:flex;align-items:end;justify-content:space-between;gap:16px;margin:22px 0 14px}
+.section-head h2{margin:0;font-size:19px;letter-spacing:-.02em}
+.section-head p{margin:5px 0 0;color:var(--muted);font-size:12px}
+.refresh{border:1px solid var(--line);background:#101a2b;color:var(--muted);padding:9px 12px;border-radius:10px;font-weight:700;cursor:pointer}
+.refresh:hover{border-color:var(--gold);color:var(--gold)}
+.podium{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;align-items:end}
+.podium-card{position:relative;overflow:hidden;text-align:center;padding:22px 14px 20px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(160deg,#17263d,#101827);min-height:164px}
+.podium-card.first{min-height:190px;border-color:#92783e;background:linear-gradient(160deg,#3a321f,#171e2b)}
+.podium-card .medal{font-size:22px}
+.podium-card .flag{font-size:34px;margin:9px 0}
+.podium-card .country{font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.podium-card .score{margin-top:7px;color:var(--gold);font-weight:900;font-size:20px;font-variant-numeric:tabular-nums}
+.podium-card .place{margin-top:5px;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.12em}
+.panel{border:1px solid var(--line);border-radius:18px;background:linear-gradient(160deg,#111d30,#0d1523);overflow:hidden}
+.toolbar{display:flex;gap:10px;padding:15px;border-bottom:1px solid var(--line)}
+input{width:100%;min-width:0;background:#080f1c;border:1px solid var(--line);border-radius:11px;padding:12px 14px;color:var(--text);font:inherit;outline:none}
+input:focus{border-color:var(--gold);box-shadow:0 0 0 3px #f6c85f1c}
+.count{display:flex;align-items:center;white-space:nowrap;color:var(--muted);font-size:12px;padding:0 5px}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;text-align:left}
+th{padding:12px 16px;color:#8494ac;font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:800}
+td{padding:14px 16px;border-top:1px solid #1c2b40;font-size:14px}
+tbody tr:hover{background:#ffffff06}
+.rank{width:62px;color:var(--muted);font-weight:800;font-variant-numeric:tabular-nums}
+.country-cell{display:flex;align-items:center;gap:11px;font-weight:750}
+.flag{font-size:23px}
+.points{text-align:right;color:var(--gold);font-weight:850;font-variant-numeric:tabular-nums;white-space:nowrap}
+.empty{text-align:center;color:var(--muted);padding:28px}
+footer{padding:0 0 28px;text-align:center;color:#65748c;font-size:11px}
+@media(max-width:600px){.wrap{width:min(100% - 22px,1040px)}header{padding-top:28px}.podium{gap:7px}.podium-card{padding:16px 7px;min-height:150px}.podium-card.first{min-height:170px}.podium-card .country{font-size:12px}.podium-card .score{font-size:16px}.podium-card .flag{font-size:29px}td{padding:12px 10px}.rank{width:42px}.toolbar{padding:11px}}
 </style>
 </head>
 <body>
-
-<header>
-<h1>⚔️ FLAG WARS</h1>
-<p>Dünya ülkelerinin büyük mücadelesi!</p>
+<header class="wrap">
+  <div class="brand"><span class="brand-mark">⚔</span> GLOBAL LIVE COMPETITION</div>
+  <h1>FLAG <span>WARS</span></h1>
+  <p class="subtitle">Ülkeler yarışıyor. Her puan sıralamayı değiştiriyor.</p>
+  <div class="statusbar"><span id="statusDot" class="dot"></span><span id="statusText" aria-live="polite">Bağlantı kuruluyor…</span></div>
 </header>
-
-<div class="container">
-<div class="panel">
-<h2>🌍 Ülke Seçimi</h2>
-<select id="countrySelect">
-<option>Ülkeler yükleniyor...</option>
-</select>
-<p class="status" id="status">Bağlantı kuruluyor...</p>
-</div>
-
-<div class="panel">
-<h2>🏆 Dünya Sıralaması</h2>
-<div id="leaderboard">Yükleniyor...</div>
-</div>
-</div>
-
-<footer>FLAG WARS © 2026</footer>
-
+<main class="wrap">
+  <section aria-labelledby="podiumTitle">
+    <div class="section-head"><div><h2 id="podiumTitle">🏆 Şampiyonlar kürsüsü</h2><p>En yüksek puana sahip ilk üç ülke</p></div><button class="refresh" id="refreshBtn" type="button">↻ Yenile</button></div>
+    <div class="podium" id="podium"><div class="panel empty">Sıralama yükleniyor…</div></div>
+  </section>
+  <section aria-labelledby="rankingTitle">
+    <div class="section-head"><div><h2 id="rankingTitle">🌍 Dünya sıralaması</h2><p>Canlı puan tablosu</p></div></div>
+    <div class="panel">
+      <div class="toolbar"><input id="search" type="search" placeholder="Ülke ara…" autocomplete="off" aria-label="Ülke ara"><span class="count" id="countryCount">— ülke</span></div>
+      <div class="table-wrap"><table><thead><tr><th>Sıra</th><th>Ülke</th><th style="text-align:right">Toplam puan</th></tr></thead><tbody id="leaderboard"><tr><td colspan="3" class="empty">Veriler yükleniyor…</td></tr></tbody></table></div>
+    </div>
+  </section>
+</main>
+<footer class="wrap">FLAG WARS © 2026 · Dünya arenası</footer>
 <script>
-const URL="https://bmxewokygooxvbrbdqjc.supabase.co";
-const KEY="sb_publishable_wWEBLE60kGEOwRKkWZjkPQ_liboCh0c";
-const db=supabase.createClient(URL,KEY);
-
-function getFlag(code){
-return String.fromCodePoint(...code.toUpperCase().split("").map(c=>127397+c.charCodeAt(0)));
+const SUPABASE_URL="https://bmxewokygooxvbrbdqjc.supabase.co";
+const SUPABASE_KEY="sb_publishable_wWEBLE60kGEOwRKkWZjkPQ_liboCh0c";
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let countries=[];
+let loading=false;
+const $=id=>document.getElementById(id);
+const number=n=>Number(n||0).toLocaleString("de-DE");
+function flag(code){
+  if(!/^[A-Z]{2}$/.test(String(code||"").toUpperCase())) return "🏳️";
+  return String.fromCodePoint(...String(code).toUpperCase().split("").map(c=>127397+c.charCodeAt(0)));
 }
-
-async function load(){
-const {data,error}=await db.from("country_scores")
-.select("country_code,country_name,points")
-.order("points",{ascending:false});
-
-if(error){
-document.getElementById("status").textContent="Bağlantı hatası: "+error.message;
-return;
+function render(){
+  const top=countries.slice(0,3);
+  const podium=$("podium");
+  podium.replaceChildren();
+  const order=[1,0,2];
+  order.forEach(index=>{
+    const c=top[index];
+    if(!c)return;
+    const card=document.createElement("article");
+    card.className="podium-card"+(index===0?" first":"");
+    const medal=document.createElement("div");medal.className="medal";medal.textContent=["🥇","🥈","🥉"][index];
+    const emoji=document.createElement("div");emoji.className="flag";emoji.textContent=flag(c.country_code);
+    const name=document.createElement("div");name.className="country";name.textContent=c.country_name;
+    const score=document.createElement("div");score.className="score";score.textContent=number(c.points)+" P";
+    const place=document.createElement("div");place.className="place";place.textContent=(index+1)+". sıra";
+    card.append(medal,emoji,name,score,place);podium.append(card);
+  });
+  if(!top.length)podium.innerHTML='<div class="panel empty" style="grid-column:1/-1">Henüz puan bulunmuyor.</div>';
+  drawRows();
 }
-
-document.getElementById("status").textContent="🟢 Canlı bağlantı aktif";
-
-const select=document.getElementById("countrySelect");
-const old=select.value;
-select.innerHTML='<option value="">Ülkeni seç</option>';
-
-[...data].sort((a,b)=>a.country_name.localeCompare(b.country_name)).forEach(c=>{
-let option=document.createElement("option");
-option.value=c.country_code;
-option.textContent=getFlag(c.country_code)+" "+c.country_name;
-select.appendChild(option);
-});
-select.value=old;
-
-const board=document.getElementById("leaderboard");
-board.innerHTML="";
-
-data.slice(0,10).forEach((c,i)=>{
-const item=document.createElement("div");
-item.className="country"+(i===0?" first":"");
-item.innerHTML=`
-<span class="rank">#${i+1}</span>
-<span class="flag">${getFlag(c.country_code)}</span>
-<span class="name"></span>
-<span class="points">${Number(c.points).toLocaleString("de-DE")} P</span>`;
-item.querySelector(".name").textContent=c.country_name;
-board.appendChild(item);
-});
+function drawRows(){
+  const term=$("search").value.trim().toLocaleLowerCase("tr");
+  const filtered=countries.filter(c=>String(c.country_name).toLocaleLowerCase("tr").includes(term)||String(c.country_code).toLowerCase().includes(term));
+  $("countryCount").textContent=filtered.length+" ülke";
+  const body=$("leaderboard");body.replaceChildren();
+  filtered.forEach(c=>{
+    const tr=document.createElement("tr");
+    const rank=document.createElement("td");rank.className="rank";rank.textContent="#"+(countries.indexOf(c)+1);
+    const country=document.createElement("td");const inner=document.createElement("div");inner.className="country-cell";
+    const emoji=document.createElement("span");emoji.className="flag";emoji.textContent=flag(c.country_code);
+    const name=document.createElement("span");name.textContent=c.country_name;
+    inner.append(emoji,name);country.append(inner);
+    const points=document.createElement("td");points.className="points";points.textContent=number(c.points)+" P";
+    tr.append(rank,country,points);body.append(tr);
+  });
+  if(!filtered.length){const tr=document.createElement("tr");const td=document.createElement("td");td.colSpan=3;td.className="empty";td.textContent="Aramanızla eşleşen ülke bulunamadı.";tr.append(td);body.append(tr);}
 }
-
-db.channel("scores")
-.on("postgres_changes",{event:"*",schema:"public",table:"country_scores"},load)
-.subscribe();
-
-load();
-setInterval(load,30000);
+async function loadScores(){
+  if(loading)return;loading=true;
+  try{
+    const {data,error}=await db.from("country_scores").select("country_code,country_name,points").order("points",{ascending:false}).limit(500);
+    if(error)throw error;
+    countries=(data||[]).sort((a,b)=>Number(b.points)-Number(a.points));
+    render();$("statusText").textContent="Canlı bağlantı aktif · Son güncelleme "+new Date().toLocaleTimeString("tr-TR");
+    $("statusDot").classList.remove("off");
+  }catch(error){
+    $("statusText").textContent="Bağlantı hatası · "+(error.message||"Veriler alınamadı");
+    $("statusDot").classList.add("off");
+    if(!countries.length)$("leaderboard").innerHTML='<tr><td colspan="3" class="empty">Veriler yüklenemedi. Yeniden deneyin.</td></tr>';
+  }finally{loading=false;}
+}
+$("search").addEventListener("input",drawRows);
+$("refreshBtn").addEventListener("click",loadScores);
+db.channel("flag-wars-scores").on("postgres_changes",{event:"*",schema:"public",table:"country_scores"},loadScores).subscribe();
+loadScores();
+setInterval(loadScores,30000);
 </script>
 </body>
 </html>
