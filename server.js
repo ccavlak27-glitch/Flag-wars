@@ -79,8 +79,12 @@ async function startTikTok() {
 
   try {
     tiktokStatus = "connecting";
-    tiktokConnection = new WebcastPushConnection(TIKTOK_USERNAME, {});
+    tiktokConnection = new WebcastPushConnection(TIKTOK_USERNAME, { processInitialData: false });
     tiktokConnection.on("gift", handleGift);
+    tiktokConnection.on("error", (error) => {
+      tiktokStatus = "error";
+      console.error("TikTok event error:", error?.stack || error?.message || error);
+    });
     tiktokConnection.on("connected", () => {
       tiktokStatus = "connected";
       console.log("TikTok LIVE bağlantısı başarılı.");
