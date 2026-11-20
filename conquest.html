@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#070b14">
+<title>FLAG WARS: CONQUEST</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--bg:#070b14;--panel:#101827;--panel2:#151f31;--line:#27354b;--gold:#e8bd63;--muted:#8998af;--text:#f2f5fa;--cyan:#63c9e8;--green:#57d6a0}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 58% 42%,#172b43 0,transparent 48%),var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;min-height:100vh;overflow-x:hidden}
+button,select{font:inherit}button{cursor:pointer}.app{min-height:100vh;display:grid;grid-template-columns:246px 1fr}
+.sidebar{background:#0a111eeb;border-right:1px solid var(--line);padding:24px 16px;display:flex;flex-direction:column;z-index:5}
+.brand{display:flex;align-items:center;gap:11px;padding:4px 8px 28px}.brand-mark{width:40px;height:40px;border:1px solid #826b3d;border-radius:12px;display:grid;place-items:center;background:linear-gradient(145deg,#40351e,#172033);font-size:21px}.brand strong{font-size:14px;letter-spacing:.12em}.brand small{display:block;color:var(--gold);font-size:9px;letter-spacing:.2em;margin-top:4px}
+.nav-label{font-size:9px;color:#64738b;letter-spacing:.18em;font-weight:800;padding:12px 11px}.nav{display:grid;gap:5px}.nav button{border:1px solid transparent;background:transparent;color:#9eacc0;text-align:left;padding:12px;border-radius:10px;font-size:12px;font-weight:650;display:flex;align-items:center;gap:12px}.nav button.active{background:#1c2a40;border-color:#34445c;color:#f5d58e}.nav button span{width:18px;text-align:center;font-size:16px}.sidebar-bottom{margin-top:auto;border:1px solid var(--line);background:#111b2b;border-radius:13px;padding:14px}.sidebar-bottom small{color:var(--muted);font-size:10px}.sidebar-bottom strong{display:block;margin-top:7px;font-size:12px}
+main{min-width:0;padding:20px 24px 24px}.topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px}.eyebrow{font-size:10px;color:var(--gold);letter-spacing:.2em;font-weight:800}.topbar h1{font-size:clamp(20px,3vw,28px);margin:5px 0 0;letter-spacing:-.05em}.top-actions{display:flex;align-items:center;gap:9px}.pill{border:1px solid var(--line);background:#111a29;border-radius:999px;padding:9px 12px;color:#aab7c9;font-size:10px;font-weight:700}.live-dot{display:inline-block;width:7px;height:7px;background:var(--green);border-radius:50%;margin-right:7px;box-shadow:0 0 10px #57d6a088}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px;margin-bottom:14px}.stat{background:linear-gradient(145deg,#141f30,#0e1725);border:1px solid var(--line);border-radius:13px;padding:13px 15px}.stat label{font-size:9px;color:var(--muted);letter-spacing:.13em;text-transform:uppercase}.stat strong{display:block;font-size:20px;margin-top:7px;letter-spacing:-.04em}.stat strong em{font-size:10px;color:var(--gold);font-style:normal;font-weight:600}
+.game-layout{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:13px;align-items:stretch}.map-card,.info-card{background:linear-gradient(145deg,#111c2c,#0b1320);border:1px solid var(--line);border-radius:17px;overflow:hidden;min-height:540px}.map-head{height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 17px;border-bottom:1px solid #233148}.map-head strong{font-size:12px}.map-head small{font-size:9px;color:var(--muted)}#globeViz{height:480px;width:100%;position:relative}.map-hint{position:absolute;left:16px;bottom:14px;background:#08111ddc;border:1px solid #293b52;border-radius:9px;padding:9px 11px;color:#a8b7cb;font-size:9px;pointer-events:none;backdrop-filter:blur(8px)}
+.info-card{padding:18px;min-height:0}.panel-kicker{color:var(--gold);font-size:9px;letter-spacing:.18em;font-weight:800}.country-flag{font-size:43px;margin:20px 0 8px}.country-name{font-size:23px;font-weight:850;letter-spacing:-.05em}.country-sub{color:var(--muted);font-size:10px;margin-top:5px}.divider{height:1px;background:var(--line);margin:18px 0}.detail-row{display:flex;justify-content:space-between;gap:12px;margin:13px 0;font-size:10px}.detail-row span{color:var(--muted)}.detail-row strong{font-size:10px}.select-note{background:#172338;border:1px solid #2c405c;border-radius:10px;padding:12px;color:#aebdd0;font-size:10px;line-height:1.6;margin-top:18px}.action{width:100%;border:1px solid #9b793c;background:linear-gradient(110deg,#9e7836,#d0a653);color:#17130b;border-radius:10px;padding:12px;font-size:11px;font-weight:900;margin-top:16px;opacity:.55;cursor:not-allowed}.action-note{text-align:center;color:#718198;font-size:9px;margin-top:8px}
+.footer{color:#65748a;font-size:9px;text-align:center;margin:15px 0 0}
+@media(max-width:980px){.app{grid-template-columns:74px 1fr}.sidebar{padding:18px 9px}.brand{justify-content:center;padding:4px 0 25px}.brand-copy,.nav-label,.nav button .nav-text,.sidebar-bottom{display:none}.nav button{justify-content:center;padding:13px 8px}.nav button span{font-size:18px}.game-layout{grid-template-columns:minmax(0,1fr) 250px}}
+@media(max-width:680px){.app{display:block}.sidebar{position:fixed;bottom:0;left:0;right:0;height:62px;padding:6px 9px;border-right:0;border-top:1px solid var(--line);display:block}.brand,.nav-label,.sidebar-bottom{display:none}.nav{display:flex;justify-content:space-around}.nav button{display:flex;flex:1;justify-content:center;padding:8px 2px}.nav button span{font-size:17px}.nav button .nav-text{display:none}main{padding:16px 12px 82px}.topbar{align-items:flex-start}.top-actions .pill:last-child{display:none}.stats{gap:7px}.stat{padding:10px}.stat strong{font-size:16px}.stat label{font-size:8px}.game-layout{grid-template-columns:1fr}.map-card{min-height:390px}#globeViz{height:330px}.info-card{min-height:300px}.country-flag{margin:12px 0 5px}.footer{margin-bottom:4px}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand"><div class="brand-mark">⚔</div><div class="brand-copy"><strong>FLAG WARS</strong><small>CONQUEST</small></div></div>
+  <div class="nav-label">KOMUTA MERKEZİ</div>
+  <nav class="nav">
+    <button class="active" type="button"><span>🌐</span><span class="nav-text">Dünya haritası</span></button>
+    <button type="button"><span>⚔️</span><span class="nav-text">Savaş alanı</span></button>
+    <button type="button"><span>🏆</span><span class="nav-text">Sıralama</span></button>
+    <button type="button"><span>🛡️</span><span class="nav-text">İttifaklar</span></button>
+    <button type="button"><span>🎖️</span><span class="nav-text">Görevler</span></button>
+  </nav>
+  <div class="nav-label">SİSTEM</div>
+  <nav class="nav"><button type="button"><span>⚙️</span><span class="nav-text">Ayarlar</span></button></nav>
+  <div class="sidebar-bottom"><small>OYUN DURUMU</small><strong>Ön izleme sürümü</strong></div>
+</aside>
+<main>
+  <div class="topbar"><div><div class="eyebrow">SEZON 01 · DÜNYA ARENASI</div><h1>Komuta Merkezi</h1></div><div class="top-actions"><div class="pill"><span class="live-dot"></span>3D HARİTA AKTİF</div><div class="pill">TR ▾</div></div></div>
+  <section class="stats">
+    <div class="stat"><label>Toplam ülke</label><strong id="countryTotal">—</strong></div>
+    <div class="stat"><label>Fethedilen bölge</label><strong>0 <em>/ 195</em></strong></div>
+    <div class="stat"><label>Aktif savaş</label><strong>0 <em>Şu an</em></strong></div>
+  </section>
+  <section class="game-layout">
+    <div class="map-card"><div class="map-head"><div><strong>🌍 Canlı dünya haritası</strong><br><small>Döndür · Yakınlaştır · Ülke seç</small></div><small>3D GLOBE</small></div><div id="globeViz"><div class="map-hint">Bir ülkeye dokunarak ayrıntılarını görüntüle</div></div></div>
+    <aside class="info-card"><div class="panel-kicker">ÜLKE İSTİHBARATI</div><div class="country-flag" id="countryFlag">🌐</div><div class="country-name" id="countryName">Ülke seçilmedi</div><div class="country-sub" id="countryCode">Haritadan bir ülke seç</div><div class="divider"></div><div class="detail-row"><span>Kontrol durumu</span><strong id="controlState">Tarafsız</strong></div><div class="detail-row"><span>Güç seviyesi</span><strong>—</strong></div><div class="detail-row"><span>Toprak sayısı</span><strong>—</strong></div><div class="select-note">Bu ilk 3D prototipte dünya haritası ve ülke seçimi çalışır. Fetih, savaş, hesaplar ve kalıcı kayıt sistemleri sonraki geliştirme aşamalarında bağlanacak.</div><button class="action" type="button" disabled>⚔️ Fetih sistemi hazırlanıyor</button><div class="action-note">Henüz gerçek savaş veya puan değişikliği yapılmaz.</div></aside>
+  </section>
+  <div class="footer">FLAG WARS: CONQUEST · PROTOTİP SÜRÜMÜ · Oyun verileri henüz canlı sisteme bağlanmadı</div>
+</main>
+</div>
+<script src="https://unpkg.com/globe.gl"></script>
+<script>
+const flag=code=>{const s=String(code||"");if(!/^[A-Z]{2}$/.test(s))return "🏳️";return String.fromCodePoint(...s.split("").map(c=>127397+c.charCodeAt(0)))};
+const globe=Globe()(document.getElementById("globeViz"))
+ .globeImageUrl("https://unpkg.com/three-globe/example/img/earth-night.jpg")
+ .backgroundColor("rgba(0,0,0,0)")
+ .showAtmosphere(true).atmosphereColor("#5aa9d6").atmosphereAltitude(.18)
+ .polygonAltitude(.012)
+ .polygonCapColor(()=> "rgba(31,119,165,0.22)")
+ .polygonSideColor(()=> "rgba(30,105,145,0.22)")
+ .polygonStrokeColor(()=> "rgba(117,190,220,0.58)")
+ .polygonLabel(d=>'<b style="color:#f4d18a">'+(d.properties.name||"Ülke")+'</b>')
+ .onPolygonClick(d=>{
+   const name=d.properties.name||"Bilinmeyen ülke";
+   document.getElementById("countryName").textContent=name;
+   document.getElementById("countryFlag").textContent="🌐";
+   document.getElementById("countryCode").textContent="Harita üzerinde seçildi";
+   document.getElementById("controlState").textContent="Tarafsız";
+ });
+fetch("https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson")
+ .then(r=>{if(!r.ok)throw new Error("Harita verisi alınamadı");return r.json()})
+ .then(data=>{globe.polygonsData(data.features);document.getElementById("countryTotal").textContent=data.features.length;})
+ .catch(()=>{document.getElementById("countryTotal").textContent="—";document.getElementById("countryName").textContent="Harita yüklenemedi";});
+const resize=()=>{const el=document.getElementById("globeViz");globe.width(el.clientWidth).height(el.clientHeight)};
+window.addEventListener("resize",resize);resize();
+globe.pointOfView({lat:20,lng:10,altitude:2.25},0);
+</script>
+</body>
+</html>
