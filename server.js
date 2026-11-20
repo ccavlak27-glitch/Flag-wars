@@ -79,7 +79,7 @@ async function startTikTok() {
 
   try {
     tiktokStatus = "connecting";
-    tiktokConnection = new WebcastPushConnection(TIKTOK_USERNAME);
+    tiktokConnection = new WebcastPushConnection(TIKTOK_USERNAME, {});
     tiktokConnection.on("gift", handleGift);
     tiktokConnection.on("connected", () => {
       tiktokStatus = "connected";
