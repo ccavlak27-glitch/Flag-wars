@@ -1,4 +1,6 @@
 import express from "express";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 import { WebcastPushConnection } from "tiktok-live-connector/legacy";
 
@@ -7,6 +9,7 @@ app.disable("x-powered-by");
 app.use(express.json({ limit: "32kb" }));
 
 const PORT = Number(process.env.PORT || 3000);
+const ROOT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const TIKTOK_USERNAME = (process.env.TIKTOK_USERNAME || "").replace(/^@/, "").trim();
@@ -102,10 +105,11 @@ async function startTikTok() {
 }
 
 app.get("/", (_req, res) => {
-  res.status(200).json({
-    name: "FLAG WARS",
-    status: "online",
-    version: "2.1.0"
+  res.sendFile(path.join(ROOT_DIR, "index.html"), (error) => {
+    if (error && !res.headersSent) {
+      console.error("Ana sayfa gönderilemedi:", error.message);
+      res.status(500).send("FLAG WARS arayüzü yüklenemedi.");
+    }
   });
 });
 
