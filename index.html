@@ -6,7 +6,6 @@
 <meta name="theme-color" content="#080d18">
 <meta name="description" content="FLAG WARS — Dünya ülkelerinin canlı puan mücadelesi.">
 <title>FLAG WARS — Dünya Arenası</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://unpkg.com/globe.gl"></script>
 <style>
 :root{color-scheme:dark;--bg:#080d18;--panel:#101a2b;--panel2:#142238;--line:#263a56;--gold:#f6c85f;--text:#f4f7fb;--muted:#91a0b7;--green:#45d49a;--red:#ff7272}
@@ -81,9 +80,6 @@ footer{padding:0 0 28px;text-align:center;color:#65748c;font-size:11px}
 </main>
 <footer class="wrap">FLAG WARS © 2026 · Dünya arenası</footer>
 <script>
-const SUPABASE_URL="https://bmxewokygooxvbrbdqjc.supabase.co";
-const SUPABASE_KEY="sb_publishable_wWEBLE60kGEOwRKkWZjkPQ_liboCh0c";
-const db=window.supabase?.createClient ? window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY) : null;
 let countries=[];
 let loading=false;
 let globeInstance=null;
@@ -165,23 +161,28 @@ async function initGlobe(){
 async function loadScores(){
   if(loading)return;loading=true;
   try{
-    if(!db)throw new Error("Supabase kütüphanesi yüklenemedi. Sayfayı yenileyin veya CDN bağlantısını kontrol edin.");
-    const query=db.from("country_scores").select("country_code,country_name,points").order("points",{ascending:false}).limit(500);
-    const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error("Veritabanı yanıt vermiyor (12 saniye zaman aşımı). Supabase URL, anahtar ve tablo erişimini kontrol etmeliyiz.")),12000));
-    const {data,error}=await Promise.race([query,timeout]);
-    if(error)throw error;
-    countries=(data||[]).sort((a,b)=>Number(b.points)-Number(a.points));
+    const controller=new AbortController();
+    const timeout=setTimeout(()=>controller.abort(),12000);
+    let response;
+    try{
+      response=await fetch("/api/scores",{cache:"no-store",signal:controller.signal});
+    }finally{
+      clearTimeout(timeout);
+    }
+    const result=await response.json();
+    if(!response.ok)throw new Error(result.error||("Sunucu hatası: "+response.status));
+    countries=(result.data||[]).sort((a,b)=>Number(b.points)-Number(a.points));
     render();$("statusText").textContent="Canlı bağlantı aktif · Son güncelleme "+new Date().toLocaleTimeString("tr-TR");
     $("statusDot").classList.remove("off");
   }catch(error){
-    $("statusText").textContent="Bağlantı hatası · "+(error.message||"Veriler alınamadı");
+    const message=error.name==="AbortError"?"Sunucu 12 saniyede yanıt vermedi.":(error.message||"Veriler alınamadı");
+    $("statusText").textContent="Bağlantı hatası · "+message;
     $("statusDot").classList.add("off");
     if(!countries.length)$("leaderboard").innerHTML='<tr><td colspan="3" class="empty">Veriler yüklenemedi. Yeniden deneyin.</td></tr>';
   }finally{loading=false;}
 }
 $("search").addEventListener("input",drawRows);
 $("refreshBtn").addEventListener("click",loadScores);
-if(db)db.channel("flag-wars-scores").on("postgres_changes",{event:"*",schema:"public",table:"country_scores"},loadScores).subscribe();
 loadScores();
 initGlobe();
 setInterval(loadScores,30000);
