@@ -19,6 +19,7 @@ let supabase = null;
 let tiktokConnection = null;
 let tiktokStatus = "not_configured";
 let tiktokError = null;
+let tiktokRetryTimer = null;
 let lastGiftAt = null;
 
 function safeTikTokError(error) {
@@ -111,9 +112,22 @@ async function startTikTok() {
 
     await tiktokConnection.connect();
   } catch (error) {
-    tiktokStatus = "error";
-    tiktokError = safeTikTokError(error);
-    console.error("TikTok bağlantı hatası:", tiktokError);
+    const offline = error?.name === "UserOfflineError" ||
+      /user.*offline|not.*live|offline/i.test(String(error?.message || ""));
+    if (offline) {
+      tiktokStatus = "offline";
+      tiktokError = null;
+      console.log("TikTok yayını kapalı; 60 saniye sonra yeniden kontrol edilecek.");
+    } else {
+      tiktokStatus = "error";
+      tiktokError = safeTikTokError(error);
+      console.error("TikTok bağlantı hatası:", tiktokError);
+    }
+    if (tiktokRetryTimer) clearTimeout(tiktokRetryTimer);
+    tiktokRetryTimer = setTimeout(() => {
+      tiktokRetryTimer = null;
+      void startTikTok();
+    }, 60_000);
   }
 }
 
