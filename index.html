@@ -159,27 +159,47 @@ async function initGlobe(){
   }catch(error){$("globeStatus").textContent="3D harita yüklenemedi. "+error.message;}
 }
 async function loadScores(){
-  if(loading)return;loading=true;
+  if(loading)return;
+  loading=true;
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),15000);
   try{
-    const controller=new AbortController();
-    const timeout=setTimeout(()=>controller.abort(),12000);
-    let response;
-    try{
-      response=await fetch("/api/scores",{cache:"no-store",signal:controller.signal});
-    }finally{
-      clearTimeout(timeout);
-    }
-    const result=await response.json();
-    if(!response.ok)throw new Error(result.error||("Sunucu hatası: "+response.status));
-    countries=(result.data||[]).sort((a,b)=>Number(b.points)-Number(a.points));
-    render();$("statusText").textContent="Canlı bağlantı aktif · Son güncelleme "+new Date().toLocaleTimeString("tr-TR");
+    const response=await fetch("/api/scores?ts="+Date.now(),{
+      method:"GET",
+      cache:"no-store",
+      headers:{"Accept":"application/json"},
+      signal:controller.signal
+    });
+    const raw=await response.text();
+    let result;
+    try{ result=JSON.parse(raw); }
+    catch{ throw new Error("Sunucu JSON yerine geçersiz yanıt gönderdi. HTTP "+response.status); }
+    if(!response.ok)throw new Error(result.error||("API HTTP "+response.status));
+    if(!Array.isArray(result.data))throw new Error("API yanıtında data listesi bulunamadı.");
+    countries=result.data
+      .filter(c=>c&&/^[A-Z]{2}$/.test(String(c.country_code||"").toUpperCase()))
+      .map(c=>({...c,country_code:String(c.country_code).toUpperCase(),points:Number(c.points)||0}))
+      .sort((a,b)=>b.points-a.points);
+    render();
+    $("statusText").textContent=countries.length
+      ? "Canlı bağlantı aktif · "+countries.length+" ülke · "+new Date().toLocaleTimeString("tr-TR")
+      : "Veritabanı bağlantısı aktif · Henüz ülke puanı kaydı yok";
     $("statusDot").classList.remove("off");
   }catch(error){
-    const message=error.name==="AbortError"?"Sunucu 12 saniyede yanıt vermedi.":(error.message||"Veriler alınamadı");
-    $("statusText").textContent="Bağlantı hatası · "+message;
+    const message=error.name==="AbortError"
+      ? "API 15 saniyede yanıt vermedi. Render servisini ve Supabase bağlantısını kontrol edin."
+      : (error.message||"Bilinmeyen bağlantı hatası");
+    $("statusText").textContent="Veri alınamadı: "+message;
     $("statusDot").classList.add("off");
-    if(!countries.length)$("leaderboard").innerHTML='<tr><td colspan="3" class="empty">Veriler yüklenemedi. Yeniden deneyin.</td></tr>';
-  }finally{loading=false;}
+    if(!countries.length){
+      $("podium").innerHTML='<div class="panel empty" style="grid-column:1/-1">Puanlar yüklenemedi.<br><small>'+message.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))+'</small></div>';
+      $("leaderboard").innerHTML='<tr><td colspan="3" class="empty">Bağlantı hatası: '+message.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))+'</td></tr>';
+      $("countryCount").textContent="—";
+    }
+  }finally{
+    clearTimeout(timeout);
+    loading=false;
+  }
 }
 $("search").addEventListener("input",drawRows);
 $("refreshBtn").addEventListener("click",loadScores);
