@@ -113,10 +113,50 @@ app.get("/", (_req, res) => {
   });
 });
 
-app.get("/health", (_req, res) => {
-  const healthy = Boolean(supabase);
+app.get("/api/scores", async (_req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!supabase) {
+    return res.status(503).json({ error: "Supabase sunucu ayarları eksik." });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("country_scores")
+      .select("country_code,country_name,points")
+      .order("points", { ascending: false })
+      .limit(500);
+
+    if (error) throw error;
+    return res.json({ data: data || [] });
+  } catch (error) {
+    console.error("Ülke puanları okunamadı:", error.message);
+    return res.status(502).json({ error: "Veritabanı okunamadı: " + error.message });
+  }
+});
+
+app.get("/health", async (_req, res) => {
+  let database = "not_configured";
+  let databaseError = null;
+
+  if (supabase) {
+    try {
+      const { error } = await supabase
+        .from("country_scores")
+        .select("country_code")
+        .limit(1);
+      if (error) throw error;
+      database = "connected";
+    } catch (error) {
+      database = "error";
+      databaseError = error.message;
+    }
+  }
+
+  const healthy = database === "connected";
   res.status(healthy ? 200 : 503).json({
     status: healthy ? "ok" : "degraded",
+    database,
+    databaseError,
     tiktok: tiktokStatus,
     country: TIKTOK_COUNTRY_CODE,
     lastGiftAt
