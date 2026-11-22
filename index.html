@@ -7,6 +7,7 @@
 <meta name="description" content="FLAG WARS — Dünya ülkelerinin canlı puan mücadelesi.">
 <title>FLAG WARS — Dünya Arenası</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/globe.gl"></script>
 <style>
 :root{color-scheme:dark;--bg:#080d18;--panel:#101a2b;--panel2:#142238;--line:#263a56;--gold:#f6c85f;--text:#f4f7fb;--muted:#91a0b7;--green:#45d49a;--red:#ff7272}
 *{box-sizing:border-box}
@@ -35,7 +36,7 @@ main{padding-bottom:42px}
 .podium-card .country{font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .podium-card .score{margin-top:7px;color:var(--gold);font-weight:900;font-size:20px;font-variant-numeric:tabular-nums}
 .podium-card .place{margin-top:5px;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.12em}
-.panel{border:1px solid var(--line);border-radius:18px;background:linear-gradient(160deg,#111d30,#0d1523);overflow:hidden}
+.globe-panel{position:relative;min-height:360px;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:radial-gradient(ellipse at center,#142943 0,#091321 68%)}#globeViz{width:100%;height:430px}.globe-note{position:absolute;left:16px;bottom:12px;color:var(--muted);font-size:11px;pointer-events:none}.panel{border:1px solid var(--line);border-radius:18px;background:linear-gradient(160deg,#111d30,#0d1523);overflow:hidden}
 .toolbar{display:flex;gap:10px;padding:15px;border-bottom:1px solid var(--line)}
 input{width:100%;min-width:0;background:#080f1c;border:1px solid var(--line);border-radius:11px;padding:12px 14px;color:var(--text);font:inherit;outline:none}
 input:focus{border-color:var(--gold);box-shadow:0 0 0 3px #f6c85f1c}
@@ -51,7 +52,7 @@ tbody tr:hover{background:#ffffff06}
 .points{text-align:right;color:var(--gold);font-weight:850;font-variant-numeric:tabular-nums;white-space:nowrap}
 .empty{text-align:center;color:var(--muted);padding:28px}
 footer{padding:0 0 28px;text-align:center;color:#65748c;font-size:11px}
-@media(max-width:600px){.wrap{width:min(100% - 22px,1040px)}header{padding-top:28px}.podium{gap:7px}.podium-card{padding:16px 7px;min-height:150px}.podium-card.first{min-height:170px}.podium-card .country{font-size:12px}.podium-card .score{font-size:16px}.podium-card .flag{font-size:29px}td{padding:12px 10px}.rank{width:42px}.toolbar{padding:11px}}
+@media(max-width:600px){.wrap{width:min(100% - 22px,1040px)}#globeViz{height:330px}.globe-panel{min-height:330px}header{padding-top:28px}.podium{gap:7px}.podium-card{padding:16px 7px;min-height:150px}.podium-card.first{min-height:170px}.podium-card .country{font-size:12px}.podium-card .score{font-size:16px}.podium-card .flag{font-size:29px}td{padding:12px 10px}.rank{width:42px}.toolbar{padding:11px}}
 </style>
 </head>
 <body>
@@ -65,6 +66,10 @@ footer{padding:0 0 28px;text-align:center;color:#65748c;font-size:11px}
   <section aria-labelledby="podiumTitle">
     <div class="section-head"><div><h2 id="podiumTitle">🏆 Şampiyonlar kürsüsü</h2><p>En yüksek puana sahip ilk üç ülke</p></div><button class="refresh" id="refreshBtn" type="button">↻ Yenile</button></div>
     <div class="podium" id="podium"><div class="panel empty">Sıralama yükleniyor…</div></div>
+  </section>
+  <section aria-labelledby="globeTitle">
+    <div class="section-head"><div><h2 id="globeTitle">🌐 Canlı dünya haritası</h2><p>Dünyayı döndür, ülkeleri keşfet. Puan kazanan ülkeler altın renkle gösterilir.</p></div></div>
+    <div class="globe-panel"><div id="globeViz" role="img" aria-label="Etkileşimli üç boyutlu dünya haritası"></div><div class="globe-note" id="globeStatus">3D dünya yükleniyor…</div></div>
   </section>
   <section aria-labelledby="rankingTitle">
     <div class="section-head"><div><h2 id="rankingTitle">🌍 Dünya sıralaması</h2><p>Canlı puan tablosu</p></div></div>
@@ -81,6 +86,8 @@ const SUPABASE_KEY="sb_publishable_wWEBLE60kGEOwRKkWZjkPQ_liboCh0c";
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let countries=[];
 let loading=false;
+let globeInstance=null;
+let worldFeatures=[];
 const $=id=>document.getElementById(id);
 const number=n=>Number(n||0).toLocaleString("de-DE");
 function flag(code){
@@ -89,6 +96,7 @@ function flag(code){
 }
 function render(){
   const top=countries.slice(0,3);
+  if(globeInstance)globeInstance.polygonCapColor(feature=>{const code=feature.properties?.["ISO3166-1-Alpha-2"]||feature.properties?.ISO_A2||feature.properties?.iso_a2;const row=countries.find(c=>c.country_code===code);return row&&Number(row.points)>0?"rgba(246,200,95,0.72)":"rgba(55,112,165,0.48)";});
   const podium=$("podium");
   podium.replaceChildren();
   const order=[1,0,2];
@@ -124,6 +132,36 @@ function drawRows(){
   });
   if(!filtered.length){const tr=document.createElement("tr");const td=document.createElement("td");td.colSpan=3;td.className="empty";td.textContent="Aramanızla eşleşen ülke bulunamadı.";tr.append(td);body.append(tr);}
 }
+async function initGlobe(){
+  const host=$("globeViz");
+  if(typeof Globe!=="function"){ $("globeStatus").textContent="3D harita kütüphanesi yüklenemedi."; return; }
+  try{
+    const response=await fetch("https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson");
+    if(!response.ok)throw new Error("Harita verisi alınamadı.");
+    const geo=await response.json();
+    worldFeatures=geo.features||[];
+    globeInstance=Globe()(host)
+      .width(host.clientWidth||900)
+      .height(host.clientHeight||430)
+      .backgroundColor("rgba(0,0,0,0)")
+      .showAtmosphere(true)
+      .atmosphereColor("#5b9bd5")
+      .atmosphereAltitude(0.18)
+      .globeImageUrl("//unpkg.com/three-globe/example/img/earth-night.jpg")
+      .polygonsData(worldFeatures)
+      .polygonCapColor(feature=>{const code=feature.properties?.["ISO3166-1-Alpha-2"]||feature.properties?.ISO_A2||feature.properties?.iso_a2;const row=countries.find(c=>c.country_code===code);return row&&Number(row.points)>0?"rgba(246,200,95,0.72)":"rgba(55,112,165,0.48)";})
+      .polygonSideColor(()=>"rgba(20,40,65,0.45)")
+      .polygonStrokeColor(()=>"rgba(150,190,225,0.32)")
+      .polygonAltitude(0.006)
+      .polygonLabel(feature=>{const name=feature.properties?.name||feature.properties?.ADMIN||"Ülke";const code=feature.properties?.["ISO3166-1-Alpha-2"]||feature.properties?.ISO_A2||feature.properties?.iso_a2;const row=countries.find(c=>c.country_code===code);return row?name+" · "+number(row.points)+" P":name;})
+      .polygonsTransitionDuration(250);
+    globeInstance.controls().autoRotate=true;
+    globeInstance.controls().autoRotateSpeed=0.35;
+    globeInstance.controls().enableDamping=true;
+    $("globeStatus").textContent="Döndürmek için sürükle · Yakınlaştırmak için iki parmak kullan";
+    window.addEventListener("resize",()=>{if(globeInstance)globeInstance.width(host.clientWidth||900).height(host.clientHeight||430);});
+  }catch(error){$("globeStatus").textContent="3D harita yüklenemedi. "+error.message;}
+}
 async function loadScores(){
   if(loading)return;loading=true;
   try{
@@ -142,6 +180,7 @@ $("search").addEventListener("input",drawRows);
 $("refreshBtn").addEventListener("click",loadScores);
 db.channel("flag-wars-scores").on("postgres_changes",{event:"*",schema:"public",table:"country_scores"},loadScores).subscribe();
 loadScores();
+initGlobe();
 setInterval(loadScores,30000);
 </script>
 </body>
