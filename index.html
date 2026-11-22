@@ -83,7 +83,7 @@ footer{padding:0 0 28px;text-align:center;color:#65748c;font-size:11px}
 <script>
 const SUPABASE_URL="https://bmxewokygooxvbrbdqjc.supabase.co";
 const SUPABASE_KEY="sb_publishable_wWEBLE60kGEOwRKkWZjkPQ_liboCh0c";
-const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const db=window.supabase?.createClient ? window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY) : null;
 let countries=[];
 let loading=false;
 let globeInstance=null;
@@ -165,7 +165,10 @@ async function initGlobe(){
 async function loadScores(){
   if(loading)return;loading=true;
   try{
-    const {data,error}=await db.from("country_scores").select("country_code,country_name,points").order("points",{ascending:false}).limit(500);
+    if(!db)throw new Error("Supabase kütüphanesi yüklenemedi. Sayfayı yenileyin veya CDN bağlantısını kontrol edin.");
+    const query=db.from("country_scores").select("country_code,country_name,points").order("points",{ascending:false}).limit(500);
+    const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error("Veritabanı yanıt vermiyor (12 saniye zaman aşımı). Supabase URL, anahtar ve tablo erişimini kontrol etmeliyiz.")),12000));
+    const {data,error}=await Promise.race([query,timeout]);
     if(error)throw error;
     countries=(data||[]).sort((a,b)=>Number(b.points)-Number(a.points));
     render();$("statusText").textContent="Canlı bağlantı aktif · Son güncelleme "+new Date().toLocaleTimeString("tr-TR");
@@ -178,7 +181,7 @@ async function loadScores(){
 }
 $("search").addEventListener("input",drawRows);
 $("refreshBtn").addEventListener("click",loadScores);
-db.channel("flag-wars-scores").on("postgres_changes",{event:"*",schema:"public",table:"country_scores"},loadScores).subscribe();
+if(db)db.channel("flag-wars-scores").on("postgres_changes",{event:"*",schema:"public",table:"country_scores"},loadScores).subscribe();
 loadScores();
 initGlobe();
 setInterval(loadScores,30000);
