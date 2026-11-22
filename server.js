@@ -18,7 +18,17 @@ const TIKTOK_COUNTRY_CODE = (process.env.TIKTOK_COUNTRY_CODE || "TR").trim().toU
 let supabase = null;
 let tiktokConnection = null;
 let tiktokStatus = "not_configured";
+let tiktokError = null;
 let lastGiftAt = null;
+
+function safeTikTokError(error) {
+  const name = String(error?.name || "Error").slice(0, 80);
+  const message = String(error?.message || error || "Unknown TikTok error")
+    .replace(/https?:\/\/\S+/gi, "[URL hidden]")
+    .replace(/(sessionid|cookie|token|authorization)=?[^\s,;]*/gi, "$1=[hidden]")
+    .slice(0, 300);
+  return { name, message };
+}
 
 if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
   supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -86,10 +96,12 @@ async function startTikTok() {
     tiktokConnection.on("gift", handleGift);
     tiktokConnection.on("error", (error) => {
       tiktokStatus = "error";
-      console.error("TikTok event error:", error?.stack || error?.message || error);
+      tiktokError = safeTikTokError(error);
+      console.error("TikTok event error:", tiktokError);
     });
     tiktokConnection.on("connected", () => {
       tiktokStatus = "connected";
+      tiktokError = null;
       console.log("TikTok LIVE bağlantısı başarılı.");
     });
     tiktokConnection.on("disconnected", () => {
@@ -100,7 +112,8 @@ async function startTikTok() {
     await tiktokConnection.connect();
   } catch (error) {
     tiktokStatus = "error";
-    console.error("TikTok bağlantı hatası:", error.message);
+    tiktokError = safeTikTokError(error);
+    console.error("TikTok bağlantı hatası:", tiktokError);
   }
 }
 
@@ -158,6 +171,7 @@ app.get("/health", async (_req, res) => {
     database,
     databaseError,
     tiktok: tiktokStatus,
+    tiktokError,
     country: TIKTOK_COUNTRY_CODE,
     lastGiftAt
   });
